@@ -23,11 +23,11 @@ $ ansible-galaxy collection install cisco.aci --force
 
 To run the playbooks:
 ```
-$ ansible-playbook -i inventory-yaml demoXX/demoXX.yaml
+$ ansible-playbook -i inventory demoXX/demoXX.yaml
 ```
 
 To undeploy configuration:
 ```
-$ ansible-playbook -i inventory-yaml demoXX/cleanup.yaml
+$ ansible-playbook -i inventory demoXX/cleanup.yaml
 ```
 
