@@ -1,0 +1,322 @@
+---
+- name: Demo 3-Tier Web App Playbook
+  hosts: apic
+  connection: local
+  gather_facts: false
+
+  vars_files: vars.yml
+
+  tasks:
+    - name: Create tenant
+      aci_tenant:
+        host: HOST
+        username: "{{ apic_username }}"
+        password: "{{ apic_password }}"
+        port: PORT
+        validate_certs: no
+        tenant: demo_tenant
+        state: present
+
+    - name: Create VRF
+      aci_vrf:
+        host: HOST
+        username: "{{ apic_username }}"
+        password: "{{ apic_password }}"
+        port: PORT
+        validate_certs: no
+        vrf: demo_vrf
+        tenant: demo_tenant
+        state: present
+
+    - name: Create web bridge domain
+      aci_bd:
+        host: HOST
+        username: "{{ apic_username }}"
+        password: "{{ apic_password }}"
+        port: PORT
+        validate_certs: no
+        tenant: demo_tenant
+        bd: web_bd
+        vrf: demo_vrf
+        state: present
+    
+    - name: Create app bridge domain
+      aci_bd:
+        host: HOST
+        username: "{{ apic_username }}"
+        password: "{{ apic_password }}"
+        port: PORT
+        validate_certs: no
+        tenant: demo_tenant
+        bd: app_bd
+        vrf: demo_vrf
+        state: present
+
+    - name: Create DB bridge domain
+      aci_bd:
+        host: HOST
+        username: "{{ apic_username }}"
+        password: "{{ apic_password }}"
+        port: PORT
+        validate_certs: no
+        tenant: demo_tenant
+        bd: db_bd
+        vrf: demo_vrf
+        state: present
+
+    - name: Create web subnet
+      aci_bd_subnet:
+        host: HOST
+        username: "{{ apic_username }}"
+        password: "{{ apic_password }}"
+        port: PORT
+        validate_certs: no
+        tenant: demo_tenant
+        bd: web_bd
+        gateway: 10.16.1.254
+        mask: 24
+        scope: "public"
+    
+    - name: Create app subnet
+      aci_bd_subnet:
+        host: HOST
+        username: "{{ apic_username }}"
+        password: "{{ apic_password }}"
+        port: PORT
+        validate_certs: no
+        tenant: demo_tenant
+        bd: app_bd
+        gateway: 10.16.2.254
+        mask: 24
+        scope: "public"
+    
+    - name: Create web subnet
+      aci_bd_subnet:
+        host: HOST
+        username: "{{ apic_username }}"
+        password: "{{ apic_password }}"
+        port: PORT
+        validate_certs: no
+        tenant: demo_tenant
+        bd: db_bd
+        gateway: 10.16.3.254
+        mask: 24
+        scope: "public"
+
+    - name: Create web_app filter
+      aci_filter: 
+        host: HOST
+        username: "{{ apic_username }}"
+        password: "{{ apic_password }}"
+        port: PORT
+        validate_certs: no
+        filter: web_app_filter
+        tenant: demo_tenant
+
+    - name: Create app_db filter
+      aci_filter: 
+        host: HOST
+        username: "{{ apic_username }}"
+        password: "{{ apic_password }}"
+        port: PORT
+        validate_certs: no
+        filter: app_db_filter
+        tenant: demo_tenant
+
+    - name: Create web_app_filter entry
+      aci_filter_entry:
+        host: HOST
+        username: "{{ apic_username }}"
+        password: "{{ apic_password }}"
+        port: PORT
+        validate_certs: no
+        tenant: demo_tenant
+        filter: web_app_filter
+        entry: web_app_filter
+        ether_type: "ip"
+        ip_protocol: "tcp"
+        dst_port_end: 5000
+        dst_port_start: 5000
+
+    - name: Create web_app_filter entry
+      aci_filter_entry:
+        host: HOST
+        username: "{{ apic_username }}"
+        password: "{{ apic_password }}"
+        port: PORT
+        validate_certs: no
+        tenant: demo_tenant
+        filter: app_db_filter
+        entry: app_db_filter
+        ether_type: "ip"
+        ip_protocol: "tcp"
+        dst_port_end: 1433
+        dst_port_start: 1433
+
+    - name: Create web_app_contract
+      aci_contract:
+        host: HOST
+        username: "{{ apic_username }}"
+        password: "{{ apic_password }}"
+        port: PORT
+        validate_certs: no
+        tenant: demo_tenant
+        contract: web_app_contract
+
+    - name: Create app_db_contract
+      aci_contract:
+        host: HOST
+        username: "{{ apic_username }}"
+        password: "{{ apic_password }}"
+        port: PORT
+        validate_certs: no
+        tenant: demo_tenant
+        contract: app_db_contract
+
+    - name: Create web_app_contract subject
+      aci_contract_subject: 
+        host: HOST
+        username: "{{ apic_username }}"
+        password: "{{ apic_password }}"
+        port: PORT
+        validate_certs: no
+        tenant: demo_tenant
+        contract: web_app_contract
+        subject: web_app_filter
+
+    - name: Create app_db_contract subject
+      aci_contract_subject: 
+        host: HOST
+        username: "{{ apic_username }}"
+        password: "{{ apic_password }}"
+        port: PORT
+        validate_certs: no
+        tenant: demo_tenant
+        contract: app_db_contract
+        subject: app_db_filter
+
+    - name: Associate web_app_contract to filter
+      aci_contract_subject_to_filter:
+        host: HOST
+        username: "{{ apic_username }}"
+        password: "{{ apic_password }}"
+        port: PORT
+        validate_certs: no
+        tenant: demo_tenant
+        contract: web_app_contract
+        subject: web_app_filter
+        filter: web_app_filter
+
+    - name: Associate app_db_contract to filter
+      aci_contract_subject_to_filter:
+        host: HOST
+        username: "{{ apic_username }}"
+        password: "{{ apic_password }}"
+        port: PORT
+        validate_certs: no
+        tenant: demo_tenant
+        contract: app_db_contract
+        subject: app_db_filter
+        filter: app_db_filter
+
+    - name: Create AP
+      aci_ap:
+        host: HOST
+        username: "{{ apic_username }}"
+        password: "{{ apic_password }}"
+        port: PORT
+        validate_certs: no
+        tenant: demo_tenant
+        ap: demo_ap
+        state: present
+
+    - name: Create Web EPG
+      aci_epg:
+        host: HOST
+        username: "{{ apic_username }}"
+        password: "{{ apic_password }}"
+        port: PORT
+        validate_certs: no
+        ap: demo_ap
+        epg: web
+        bd: web_bd
+        tenant: demo_tenant
+        state: present
+
+    - name: Create App EPG
+      aci_epg:
+        host: HOST
+        username: "{{ apic_username }}"
+        password: "{{ apic_password }}"
+        port: PORT
+        validate_certs: no
+        ap: demo_ap
+        epg: app
+        bd: app_bd
+        tenant: demo_tenant
+        state: present
+
+    - name: Create DB EPG
+      aci_epg:
+        host: HOST
+        username: "{{ apic_username }}"
+        password: "{{ apic_password }}"
+        port: PORT
+        validate_certs: no
+        ap: demo_ap
+        epg: db
+        bd: db_bd
+        tenant: demo_tenant
+        state: present
+
+    - name: Associate web_app_contract consumer to EPG
+      aci_epg_to_contract:
+        host: HOST
+        username: "{{ apic_username }}"
+        password: "{{ apic_password }}"
+        port: PORT
+        validate_certs: no
+        tenant: demo_tenant
+        ap: demo_ap
+        epg: web
+        contract: web_app_contract
+        contract_type: consumer
+    
+    - name: Associate web_app_contract provider to EPG
+      aci_epg_to_contract:
+        host: HOST
+        username: "{{ apic_username }}"
+        password: "{{ apic_password }}"
+        port: PORT
+        validate_certs: no
+        tenant: demo_tenant
+        ap: demo_ap
+        epg: app
+        contract: web_app_contract
+        contract_type: provider
+
+    - name: Associate app_db_contract consumer to EPG
+      aci_epg_to_contract:
+        host: HOST
+        username: "{{ apic_username }}"
+        password: "{{ apic_password }}"
+        port: PORT
+        validate_certs: no
+        tenant: demo_tenant
+        ap: demo_ap
+        epg: app
+        contract: app_db_contract
+        contract_type: consumer
+    
+    - name: Associate app_db_contract provider to EPG
+      aci_epg_to_contract:
+        host: HOST
+        username: "{{ apic_username }}"
+        password: "{{ apic_password }}"
+        port: PORT
+        validate_certs: no
+        tenant: demo_tenant
+        ap: demo_ap
+        epg: db
+        contract: app_db_contract
+        contract_type: provider

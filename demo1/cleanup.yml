@@ -1,0 +1,19 @@
+---
+- name: Cleanup demo1
+  hosts: apic
+  connection: local
+  gather_facts: false
+
+  vars_files:
+    vars.yml
+
+  tasks:
+    - name: Delete tenant
+      aci_tenant:
+        host: "{{ apic_hostname }}"
+        username: "{{ apic_username }}"
+        password: "{{ apic_password }}"
+        port: "{{ apic_port }}"
+        validate_certs: no
+        tenant: demo_tenant
+        state: absent

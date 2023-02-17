@@ -1,0 +1,120 @@
+---
+- name: Deploy a 3 Tier web app
+  hosts: apic
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - name: Include vars
+      include_vars:
+        file: vars.yaml
+
+    - name: Set vars
+      set_fact:
+        info: &apic_info
+          host: "{{ apic_hostname }}"
+          username: "{{ apic_username }}"
+          password: "{{ apic_password }}"
+          validate_certs: "{{ apic_validate_certs | default(false) }}"
+          use_ssl: "{{ apic_use_ssl | default(true) }}"
+          use_proxy: "{{ apic_use_proxy | default(true) }}"
+          output_level: '{{ apic_output_level | default("info") }}'
+          port: "{{ apic_port }}"
+          state: '{{ state | default("present") }}'
+
+    - name: Create tenant
+      aci_tenant:
+        <<: *apic_info
+        tenant: "{{ tenant }}"
+
+    - name: Create VRF
+      aci_vrf:
+        <<: *apic_info
+        vrf: "{{ vrf }}"
+        tenant: "{{ tenant }}"
+
+    - name: Create bridge domains
+      aci_bd:
+        <<: *apic_info
+        tenant: "{{ tenant }}"
+        bd: "{{ item.name }}"
+        vrf: "{{ vrf }}"
+      loop: "{{ bridge_domains }}"
+
+    - name: Create subnets
+      aci_bd_subnet:
+        <<: *apic_info
+        tenant: "{{ tenant }}"
+        bd: "{{ item.name }}"
+        gateway: "{{ item.gateway }}"
+        mask: 24
+        scope: "public"
+      loop: "{{ bridge_domains }}"
+
+    - name: Create filters
+      aci_filter:
+        <<: *apic_info
+        filter: "{{ item.name }}"
+        tenant: "{{ tenant }}"
+      loop: "{{ filters }}"
+
+    - name: Create filter entries
+      aci_filter_entry:
+        <<: *apic_info
+        tenant: "{{ tenant }}"
+        filter: "{{ item.name}}"
+        entry: "{{ item.name }}"
+        ether_type: "ip"
+        ip_protocol: "tcp"
+        dst_port_start: "{{ item.dest }}"
+        dst_port_end: "{{ item.dest }}"
+      loop: "{{ filters }}"
+
+    - name: Create contracts
+      aci_contract:
+        <<: *apic_info
+        tenant: "{{ tenant }}"
+        contract: "{{ item.name }}"
+      loop: "{{ contracts }}"
+
+    - name: Create contract subjects
+      aci_contract_subject:
+        <<: *apic_info
+        tenant: "{{ tenant }}"
+        contract: "{{ item.name }}"
+        subject: "{{ item.subject }}"
+      loop: "{{ contracts }}"
+
+    - name: Associate contracts to filters
+      aci_contract_subject_to_filter:
+        <<: *apic_info
+        tenant_name: "{{ tenant }}"
+        contract: "{{ item.name }}"
+        subject: "{{ item.subject }}"
+        filter: "{{ item.subject }}"
+      loop: "{{ contracts }}"
+
+    - name: Create application profile
+      aci_ap:
+        <<: *apic_info
+        tenant: "{{ tenant }}"
+        ap: "{{ app_name }}"
+
+    - name: Create EPGs
+      aci_epg:
+        <<: *apic_info
+        tenant: "{{ tenant }}"
+        ap: "{{ app_name }}"
+        epg: "{{ item.name }}"
+        bd: "{{ item.bd }}"
+      loop: "{{ epgs }}"
+
+    - name: Associate contracts to EPGs
+      aci_epg_to_contract:
+        <<: *apic_info
+        tenant: "{{ tenant }}"
+        ap: "{{ app_name }}"
+        epg: "{{ item.0.name }}"
+        contract: "{{ item.1.contract }}"
+        contract_type: "{{ item.1.type }}"
+      loop: "{{ epgs | subelements('contracts') }}"

@@ -1,0 +1,58 @@
+---
+apic_hostname: HOST
+apic_username: ADMIN
+apic_password: PASSWORD
+apic_validate_certs: false
+apic_use_ssl: true
+apic_use_proxy: true
+apic_output_level: debug
+apic_port: PORT
+
+tenant: demo_tenant
+vrf: v1
+
+bridge_domains:
+  - name: web_bd
+    gateway: 10.16.1.254
+  - name: app_bd
+    gateway: 10.16.2.254
+  - name: db_bd
+    gateway: 10.16.3.254
+
+filters:
+  - name: web_app_filter
+    dest: 5000
+  - name: app_db_filter
+    dest: 1433
+
+app_name: demo_webapp
+
+epgs:
+  - name: Web
+    bd: web_bd
+    prefGroup: no
+    contracts:
+      - contract: web_app_contract
+        type: consumer
+  - name: App
+    bd: app_bd
+    prefGroup: no
+    contracts:
+      - contract: web_app_contract
+        type: provider
+      - contract: app_db_contract
+        type: consumer
+  - name: DB
+    bd: db_bd
+    prefGroup: no
+    contracts:
+      - contract: app_db_contract
+        type: provider
+
+contracts:
+  - name: web_app_contract
+    subject: web_app_filter
+    reverse_filter: yes
+  - name: app_db_contract
+    subject: app_db_filter
+    reverse_filter: yes

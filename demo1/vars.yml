@@ -1,0 +1,9 @@
+---
+apic_hostname: HOST
+apic_username: ADMIN
+apic_password: PASSWORD
+apic_validate_certs: false
+apic_use_ssl: true
+apic_use_proxy: true
+apic_output_level: debug
+apic_port: PORT
