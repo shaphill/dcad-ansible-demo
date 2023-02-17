@@ -1,0 +1,7 @@
+[apic:vars]
+username = ADMIN
+password = PASSWORD
+ansible_python_interpreter="/usr/bin/env python"
+
+[apic]
+HOST
