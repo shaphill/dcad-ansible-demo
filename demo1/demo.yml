@@ -90,7 +90,7 @@
         mask: 24
         scope: "public"
     
-    - name: Create web subnet
+    - name: Create db subnet
       aci_bd_subnet:
         host: HOST
         username: "{{ apic_username }}"
@@ -138,7 +138,7 @@
         dst_port_end: 5000
         dst_port_start: 5000
 
-    - name: Create web_app_filter entry
+    - name: Create app_db_filter entry
       aci_filter_entry:
         host: HOST
         username: "{{ apic_username }}"
