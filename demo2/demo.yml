@@ -4,7 +4,7 @@
   connection: local
   gather_facts: false
 
-  vars_files: 
+  vars_files:
     - vars.yml
 
   vars:
@@ -18,7 +18,7 @@
       output_level: '{{ apic_output_level | default("info") }}'
       port: "{{ apic_port }}"
       state: '{{ state | default("present") }}'
-  
+
   tasks:
     - name: Create tenant
       aci_tenant:
@@ -35,9 +35,12 @@
       aci_bd:
         <<: *apic_info
         tenant: "{{ tenant }}"
-        bd: "{{ item.name }}"
+        bd: "{{ item }}"
         vrf: "{{ vrf }}"
-      loop: "{{ bridge_domains }}"
+      loop:
+        - web_bd
+        - app_bd
+        - db_bd
 
     - name: Create subnets
       aci_bd_subnet:
@@ -47,7 +50,10 @@
         gateway: "{{ item.gateway }}"
         mask: 24
         scope: "public"
-      loop: "{{ bridge_domains }}"
+      loop:
+        - { name: web_bd, gateway: 10.16.1.254 }
+        - { name: app_bd, gateway: 10.16.2.254 }
+        - { name: db_bd, gateway: 10.16.3.254 }
 
     - name: Create filters
       aci_filter:
